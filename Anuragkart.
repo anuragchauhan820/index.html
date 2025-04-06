@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Amarkart - India's premier online shopping platform for Electronics, Fashion, Handmade Goods, and Digital Products.">
+    <title>Amarkart - Shop the Best Online Deals</title>
+    <style>
+        /* [Previous CSS remains the same as provided earlier] */
+    </style>
+</head>
+<body>
+    <!-- [Previous HTML structure remains the same] -->
+    <section id="checkout" class="section">
+        <h1>Checkout</h1>
+        <div class="checkout-form">
+            <form id="checkout-form" onsubmit="placeOrder(event)">
+                <input type="text" placeholder="Full Name" required>
+                <input type="text" placeholder="Shipping Address" required>
+                <input type="text" placeholder="Phone Number" required>
+                <input type="email" placeholder="Email Address" required>
+                <select id="payment-method" required>
+                    <option value="upi">UPI</option>
+                    <option value="cod">Cash on Delivery</option>
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="netbanking">Net Banking</option>
+                    <option value="wallet">Mobile Wallet (Paytm, PhonePe)</option>
+                </select>
+                <button type="submit" class="cta-btn">Place Your Order</button>
+            </form>
+            <p id="order-confirmation" style="display:none; color:green; margin-top:15px;"></p>
+        </div>
+    </section>
+    <!-- [Footer and other sections remain the same] -->
+
+    <script>
+        const products = [
+            { name: 'Wireless Noise-Canceling Earbuds', price: 5499, desc: 'Premium earbuds with advanced noise cancellation and 24-hour battery life.', img: 'https://via.placeholder.com/400', category: 'Electronics', stock: 50 },
+            { name: 'Men’s Designer Kurta Set', price: 2499, desc: 'Handcrafted kurta set with traditional embroidery.', img: 'https://via.placeholder.com/400', category: 'Clothes', stock: 30 },
+            { name: 'Handmade Ceramic Vase', price: 1899, desc: 'Elegant artisan-crafted vase for home decor.', img: 'https://via.placeholder.com/400', category: 'Handmade', stock: 20 },
+            { name: 'Advanced Digital Marketing Course', price: 3499, desc: 'Online course with lifetime access and certification.', img: 'https://via.placeholder.com/400', category: 'Digital', stock: 100 },
+            { name: 'Smart LED Television 55"', price: 34999, desc: '4K Ultra HD Smart TV with built-in Alexa.', img: 'https://via.placeholder.com/400', category: 'Electronics', stock: 15 },
+            { name: 'Women’s Silk Saree', price: 4999, desc: 'Premium silk saree with gold zari work.', img: 'https://via.placeholder.com/400', category: 'Clothes', stock: 25 }
+        ];
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let total = parseFloat(localStorage.getItem('cartTotal')) || 0;
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            if (sectionId === 'home') renderProducts('bestsellers', products.slice(0, 2));
+            if (sectionId === 'shop') sortProducts();
+            if (sectionId === 'cart') updateCart();
+        }
+
+        function renderProducts(containerId, productList) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            productList.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'product';
+                div.innerHTML = `<img src="${p.img}" alt="${p.name}"><h3>${p.name}</h3><p class="price">₹${p.price.toLocaleString()}</p><div class="rating">★★★★☆ (4.5)</div><button class="add-to-cart" onclick="addToCart('${p.name}', ${p.price}, ${p.stock})">Add to Cart</button>`;
+                div.onclick = () => showProduct(p.name, p.price, p.desc, p.img, p.stock);
+                container.appendChild(div);
+            });
+        }
+
+        function showProduct(name, price, desc, img, stock) {
+            document.getElementById('product-name').textContent = name;
+            document.getElementById('product-price').textContent = `₹${price.toLocaleString()}`;
+            document.getElementById('product-desc').textContent = desc;
+            document.getElementById('product-img').src = img;
+            document.getElementById('product-stock').textContent = stock > 0 ? 'In Stock' : 'Out of Stock';
+            document.getElementById('product-add-btn').onclick = () => addToCart(name, price, stock);
+            showSection('product');
+        }
+
+        function addToCart(name, price, stock) {
+            if (stock <= 0) {
+                alert('This product is out of stock!');
+                return;
+            }
+            cart.push({ name, price, quantity: 1 });
+            total += price;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            localStorage.setItem('cartTotal', total);
+            alert(`${name} added to cart!`);
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cart-items');
+            cartItems.innerHTML = '';
+            cart.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.name} x${item.quantity} - ₹${(item.price * item.quantity).toLocaleString()}`;
+                cartItems.appendChild(li);
+            });
+            document.getElementById('cart-total').textContent = total.toLocaleString();
+        }
+
+        function sortProducts() {
+            const sortValue = document.getElementById('sort').value;
+            let sorted = [...products];
+            if (sortValue === 'high-to-low') sorted.sort((a, b) => b.price - a.price);
+            else if (sortValue === 'low-to-high') sorted.sort((a, b) => a.price - b.price);
+            filterProducts(sorted);
+        }
+
+        function filterProducts(sortedProducts = products) {
+            const min = parseInt(document.getElementById('min-price').value) || 0;
+            const max = parseInt(document.getElementById('max-price').value) || Infinity;
+            const category = document.getElementById('category').value;
+            let filtered = sortedProducts.filter(p => p.price >= min && p.price <= max);
+            if (category !== 'all') filtered = filtered.filter(p => p.category === category);
+            renderProducts('shop-products', filtered);
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.desc.toLowerCase().includes(query));
+            renderProducts('shop-products', filtered);
+            showSection('shop');
+        }
+
+        function placeOrder(event) {
+            event.preventDefault();
+            const method = document.getElementById('payment-method').value;
+            const confirmation = document.getElementById('order-confirmation');
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            confirmation.style.display = 'block';
+            let message = '';
+            switch (method) {
+                case 'upi':
+                    message = 'Redirecting to UPI Payment. Order #ORD' + Math.floor(Math.random() * 1000000) + ' placed successfully!';
+                    break;
+                case 'cod':
+                    message = 'Order #ORD' + Math.floor(Math.random() * 1000000) + ' placed with Cash on Delivery!';
+                    break;
+                case 'card':
+                    message = 'Redirecting to Card Payment. Order #ORD' + Math.floor(Math.random() * 1000000) + ' placed successfully!';
+                    break;
+                case 'netbanking':
+                    message = 'Redirecting to Net Banking. Order #ORD' + Math.floor(Math.random() * 1000000) + ' placed successfully!';
+                    break;
+                case 'wallet':
+                    message = 'Redirecting to Mobile Wallet. Order #ORD' + Math.floor(Math.random() * 1000000) + ' placed successfully!';
+                    break;
+                default:
+                    message = 'Order placed successfully!';
+            }
+            confirmation.textContent = message;
+            cart = [];
+            total = 0;
+            localStorage.removeItem('cart');
+            localStorage.removeItem('cartTotal');
+            updateCart();
+            setTimeout(() => showSection('home'), 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('home');
+            updateCart();
+        });
+    </script>
+</body>
+</html>
